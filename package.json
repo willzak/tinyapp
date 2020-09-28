@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/willzak/tinyapp/issues"
   },
-  "homepage": "https://github.com/willzak/tinyapp#readme"
+  "homepage": "https://github.com/willzak/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
