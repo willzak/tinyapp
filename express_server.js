@@ -32,7 +32,7 @@ app.get('/hello', (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-//render the urls
+//render the urls index
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -59,9 +59,8 @@ app.post('/urls', (req, res) => {
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
   if (urlDatabase[req.params.shortURL] === undefined) {
     return res.send('ERROR: URL not in Database')
   }
-  res.redirect(longURL);
+  res.redirect(urlDatabase[req.params.shortURL]);
 })
