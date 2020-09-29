@@ -58,6 +58,13 @@ app.post('/urls', (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+app.post('/urls/:shortURL/delete', (req, res) => {
+  const url = req.params.shortURL
+  delete urlDatabase[url];
+
+  res.redirect('/urls');
+});
+
 app.get('/u/:shortURL', (req, res) => {
   if (urlDatabase[req.params.shortURL] === undefined) {
     return res.send('ERROR: URL not in Database')
