@@ -9,7 +9,6 @@ app.set('view engine', 'ejs');
 const generateRandomString = () => {
   return Math.random().toString(36).substr(2,6);
 };
-generateRandomString();
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -61,5 +60,8 @@ app.post('/urls', (req, res) => {
 
 app.get('/u/:shortURL', (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
+  if (urlDatabase[req.params.shortURL] === undefined) {
+    return res.send('ERROR: URL not in Database')
+  }
   res.redirect(longURL);
 })
