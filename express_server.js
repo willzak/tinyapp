@@ -7,8 +7,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
 
 const generateRandomString = () => {
-
+  return Math.random().toString(36).substr(2,6);
 };
+generateRandomString();
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -23,6 +24,7 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+//shows an object of all url key val pairs in the DB
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
@@ -49,6 +51,5 @@ app.get('/urls/:shortURL', (req, res) => {
 }) 
 
 app.post('/urls', (req, res) => {
-  console.log(req.body); //log the POST request body to the console
-  res.send("Ok");
+  res.redirect(`/urls/${shortURL}`);
 });
