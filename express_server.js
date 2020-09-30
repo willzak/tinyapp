@@ -13,6 +13,7 @@ const generateRandomString = () => {
   return Math.random().toString(36).substr(2,6); //generates random string of 6 letters & numbers
 };
 
+//Returns the user id for a given email, or empty string if email not in DB
 const checkEmail = (email) => {
   for (let account in users) {
     if (email === users[account].email) {
@@ -160,15 +161,18 @@ app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const accId = checkEmail(email)
-  console.log(accId)
 
   if (!email || !password) {
     res.status(400).json({message: 'Bad Request no email or password provided'});
-  } else if (users[accId].email === email && users[accId].password === password) {
-    res.cookie('userId', accId);
-    res.redirect('/urls');
-  } else {
-    res.status(403).json({message: 'Incorrect username'});
+  } else if (users[accId].email === email) {
+      if (users[accId].password === password) { //check if email and password match
+        res.cookie('userId', accId);
+        res.redirect('/urls');
+      } else {
+        res.status(403).json({message: 'Incorrect password given'})
+      }
+    } else {
+      res.status(403).json({message: 'Incorrect email'});
   }
 });
 
@@ -188,7 +192,7 @@ app.post('/register', (req, res) => {
     return res.status(400).json({message: 'Bad Request: No email or password entered'});
   };
 
-  if(checkEmail(email) === '') {
+  if(checkEmail(email) !== '') {
     return res.status(400).json({message: 'ERROR: Email already in use'});
   }
 
