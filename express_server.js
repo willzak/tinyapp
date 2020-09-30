@@ -23,11 +23,22 @@ const checkEmail = (email) => {
   return '';
 };
 
+const urlsForUser = (id) => {
+  //returns the URLS where userId = current user's ID
+  let res = {};
+  for (const item in urlDatabase) {
+    if (urlDatabase[item].userId === id) {
+      res[item] = urlDatabase[item];
+    }
+  }
+  return res;
+}
+
 const urlDatabase = {
 
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
-     userId: "aJ48lW"
+     userId: "haneul"
   },
 
   "9sm5xK": {
@@ -67,13 +78,18 @@ app.get('/hello', (req, res) => {
 //Shows index of urls in DB
 app.get('/urls', (req, res) => {
   const templateVars = { 
-    urls: urlDatabase,
+    urls: null,
     user: null
   };
 
   if (req.cookies.userId && users[req.cookies.userId]) {
     templateVars.user = users[req.cookies.userId];
+  } else {
+    res.render(res.render("urls_index", templateVars));
   }
+
+  templateVars.urls = urlsForUser(templateVars.user.id);
+
   res.render("urls_index", templateVars);
 })
 
