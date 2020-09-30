@@ -154,6 +154,11 @@ app.get('/login', (req, res) => {
   res.render('login_form', templateVars);
 })
 
+//Redirect at logout
+app.get('/logout', (req, res) => {
+  res.redirect('/login')
+})
+
 
 
 
@@ -161,8 +166,14 @@ app.get('/login', (req, res) => {
 
 //Add new URL to DB
 app.post('/urls', (req, res) => {
+  const userId = req.cookies.userId
+  const longURL = req.body.newLongURL;
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+
+  urlDatabase[shortURL] = {
+    longURL,
+    userId
+  };
 
   res.redirect(`/urls/${shortURL}`);
 });
@@ -171,8 +182,11 @@ app.post('/urls', (req, res) => {
 app.post('/urls/:shortURL', (req, res) => {
   const changedURL = req.body.changedURL;
   const shortURL = req.params.shortURL;
+  const user = req.cookies.userId;
 
-  urlDatabase[shortURL] = changedURL;
+  if (urlDatabase[shortURL].userId === user) {
+    urlDatabase[shortURL] = changedURL;
+  }
 
   res.redirect(`/urls/${shortURL}`);
 });
@@ -180,7 +194,11 @@ app.post('/urls/:shortURL', (req, res) => {
 //Delete button for each entry
 app.post('/urls/:shortURL/delete', (req, res) => {
   const url = req.params.shortURL
-  delete urlDatabase[url];
+  const user = req.cookies.userId
+
+  if (urlDatabase[url].userId === user) {
+    delete urlDatabase[url];
+  }
 
   res.redirect('/urls');
 });
