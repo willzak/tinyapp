@@ -24,8 +24,16 @@ const checkEmail = (email) => {
 };
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+     userId: "aJ48lW"
+  },
+
+  "9sm5xK": {
+    longURL: "http://www.google.com", 
+    userId: 'aJ48lW'
+  }
 };
 
 const users = {
@@ -88,7 +96,7 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:shortURL', (req, res) => {
   const templateVars = { 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
     user: null
   };
 
@@ -101,10 +109,11 @@ app.get('/urls/:shortURL', (req, res) => {
 
 //redirect to website of longURL
 app.get('/u/:shortURL', (req, res) => {
-  if (urlDatabase[req.params.shortURL] === undefined) {
+  const shortURL = req.params.shortURL
+  if (urlDatabase[shortURL] === undefined) {
     return res.send('ERROR: URL not in Database')
   }
-  res.redirect(urlDatabase[req.params.shortURL]);
+  res.redirect(urlDatabase[shortURL].longURL);
 })
 
 //Create a registration form
