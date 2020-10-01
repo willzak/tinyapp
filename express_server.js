@@ -2,13 +2,17 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 
-app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ['thisisasecretkey', 'thisisanothersupersecretkey']
+}));
 
 const generateRandomString = () => {
   return Math.random().toString(36).substr(2,6); //generates random string of 6 letters & numbers
@@ -208,20 +212,24 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  const accId = checkEmail(email)
+  const userId = checkEmail(email);
+  const currentUser = users[userId];
 
   if (!email || !password) {
     res.status(400).json({message: 'Bad Request no email or password provided'});
-  } else if (users[accId].email === email) {
-      if (users[accId].password === hashedPassword) { //check if email and password match
-        res.cookie('userId', accId);
+  };
+  
+  if (currentUser.email === email) {
+    bcrypt.compareSync(password, currentUser.password, (err, isPasswordMatched) => {
+      if(isPasswordMatched) {
+        req.session.userId = //FILL IN THIS
         res.redirect('/urls');
       } else {
-        res.status(403).json({message: 'Incorrect password given'})
+        res.status(403).json({message: 'Incorrect password given'});
       }
-    } else {
-      res.status(403).json({message: 'Incorrect email'});
+    });
+  } else {
+    res.status(403).json({message: 'Incorrect email'});
   }
 });
 
