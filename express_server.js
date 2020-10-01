@@ -4,6 +4,7 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
+const getIdByEmail = require('./helpers');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static('public'));
@@ -16,16 +17,6 @@ app.use(cookieSession({
 
 const generateRandomString = () => {
   return Math.random().toString(36).substr(2,6); //generates random string of 6 letters & numbers
-};
-
-//Returns the user id for a given email, or empty string if email not in DB
-const getIdByEmail = (email) => {
-  for (let account in users) {
-    if (email === users[account]['email']) {
-      return account;
-    }
-  }
-  return '';
 };
 
 const urlsForUser = (id) => {
@@ -60,9 +51,9 @@ const users = {
     password: "password"
   },
 
- "user2RandomID": {
+ "hubugy": {
     id: "user2RandomID", 
-    email: "user2@example.com", 
+    email: "examp@le.com", 
     password: "dishwasher-funk"
   }
 };
@@ -211,7 +202,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 //Login to website
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  let accId = getIdByEmail(email);
+  let accId = getIdByEmail(email, urlDatabase);
   const currentUser = users[accId];
 
   if (currentUser.email === email) {
@@ -247,7 +238,7 @@ app.post('/register', (req, res) => {
     return res.status(400).json({message: 'Bad Request: No email or password entered'});
   };
 
-  if(getIdByEmail(email) !== '') {
+  if(getIdByEmail(email, urlDatabase) !== '') {
     return res.status(400).json({message: 'ERROR: Email already in use'});
   };
 
