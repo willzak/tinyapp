@@ -1,5 +1,5 @@
 //Returns the user id for a given email, or empty string if email not in DB
-const getIdByEmail = (email, db) => {
+module.exports = (email, db) => {
   if (!email || !db) {
     return undefined;
   }
@@ -11,5 +11,3 @@ const getIdByEmail = (email, db) => {
   }
   return '';
 };
-
-module.exports = { getIdByEmail };

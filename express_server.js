@@ -6,10 +6,10 @@ const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const getIdByEmail = require('./helpers');
 
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(express.static('public'));
 app.use(cookieSession({
   name: 'session',
   keys: ['thisisasecretkey', 'thisisanothersupersecretkey']
@@ -28,7 +28,7 @@ const urlsForUser = (id) => {
     }
   }
   return res;
-}
+};
 
 const urlDatabase = {
 
@@ -48,7 +48,7 @@ const users = {
   "haneul": {
     id: "haneul",
     email: "han@gmail.com", 
-    password: "password"
+    password: "$2b$10$dBFKwJJM0VNnXuIU54CA9e/w0Q87mbWTXQoyPd1lh8AgciI/zFIni"
   },
 
  "hubugy": {
@@ -58,8 +58,15 @@ const users = {
   }
 };
 
+
+//----- GET REQUESTS ------
+
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.session.userId) {
+    return res.redirect('/urls');
+  } else {
+    return res.redirect('/login');
+  };
 });
 
 //shows an object of all url key val pairs in the DB
@@ -106,18 +113,28 @@ app.get('/urls/new', (req, res) => {
 
 //Create page w info about a single url
 app.get('/urls/:shortURL', (req, res) => {
-  const templateVars = { 
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    user: null
+  const shortURL = req.params.shortURL;
+
+  if (shortURL in urlDatabase) {
+    const templateVars = { 
+      shortURL, 
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      user: null
+    };
+
+    if (req.session.userId && users[req.session.userId]) {
+      templateVars.user = users[req.session.userId];
+    };
+    console.log(templateVars.user)
+    if (templateVars.user.id === urlDatabase[shortURL].userId) {
+      return res.render('urls_show', templateVars);
+    } else {
+      return res.status(401).json({message: "Access Deined: Sorry but this page is owned by another user"});
+    }
+  } else {
+    return res.status(404).json({message: "ERROR 404: Short URL NOT found in Database"});
   };
-
-  if (req.session.userId && users[req.session.userId]) {
-    templateVars.user = users[req.session.userId];
-  }
-
-  res.render('urls_show', templateVars);
-}) 
+}); 
 
 //redirect to website of longURL
 app.get('/u/:shortURL', (req, res) => {
@@ -156,9 +173,7 @@ app.get('/logout', (req, res) => {
 })
 
 
-
-
-//POST requests
+//------ POST REQUESTS ------
 
 //Add new URL to DB
 app.post('/urls', (req, res) => {
@@ -205,19 +220,22 @@ app.post('/login', (req, res) => {
   let accId = getIdByEmail(email, urlDatabase);
   const currentUser = users[accId];
 
-  if (currentUser.email === email) {
-    if (bcrypt.compareSync(password, currentUser.password)) {
-      req.session.userId = accId;
-      return res.redirect('/urls');
+  if (currentUser !== undefined) {
+    if (currentUser.email === email) {
+      if (bcrypt.compareSync(password, currentUser.password)) {
+        req.session.userId = accId;
+        return res.redirect('/urls');
+      } else {
+        return res.status(403).json({message: "Incorrect password given"});
+      }
+    } else if (!email || !password) {
+      return res.status(400).json({message: "Bad Request: No email or password given"});
     } else {
-      return res.status(403).json({message: "Incorrect password given"});
+      return res.status(403).json({message: "Incorrect email"});
     }
-  } else if (!email || !password) {
-    return res.status(400).json({message: "Bad Request: No email or password given"});
   } else {
-    return res.status(403).json({message: "Incorrect email"});
+    return res.status(404).json({message: "ERROR: User not found in Database"});
   };
-
 });
 
 //Logout of website
@@ -229,8 +247,7 @@ app.post('/logout', (req, res) => {
 
 //Create endpoint for registration
 app.post('/register', (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
+  const { email, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
   const randUserID = generateRandomString();
 
@@ -238,7 +255,7 @@ app.post('/register', (req, res) => {
     return res.status(400).json({message: 'Bad Request: No email or password entered'});
   };
 
-  if(getIdByEmail(email, urlDatabase) !== '') {
+  if(getIdByEmail(email, users) !== '') {
     return res.status(400).json({message: 'ERROR: Email already in use'});
   };
 
