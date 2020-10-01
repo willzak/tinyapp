@@ -19,9 +19,9 @@ const generateRandomString = () => {
 };
 
 //Returns the user id for a given email, or empty string if email not in DB
-const checkEmail = (email) => {
+const getIdByEmail = (email) => {
   for (let account in users) {
-    if (email === users[account].email) {
+    if (email === users[account]['email']) {
       return account;
     }
   }
@@ -43,7 +43,7 @@ const urlDatabase = {
 
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
-     userId: "haneul"
+    userId: "haneul"
   },
 
   "9sm5xK": {
@@ -87,10 +87,10 @@ app.get('/urls', (req, res) => {
     user: null
   };
 
-  if (req.cookies.userId && users[req.cookies.userId]) {
-    templateVars.user = users[req.cookies.userId];
+  if (req.session.userId && users[req.session.userId]) {
+    templateVars.user = users[req.session.userId];
   } else {
-    res.render(res.render("urls_index", templateVars));
+    return res.render("urls_index", templateVars);
   }
 
   templateVars.urls = urlsForUser(templateVars.user.id);
@@ -104,8 +104,8 @@ app.get('/urls/new', (req, res) => {
     user: null
   };
 
-  if (req.cookies.userId && users[req.cookies.userId]) {
-    templateVars.user = users[req.cookies.userId];
+  if (req.session.userId && users[req.session.userId]) {
+    templateVars.user = users[req.session.userId];
   } else {
     return res.redirect('/login');
   }
@@ -121,8 +121,8 @@ app.get('/urls/:shortURL', (req, res) => {
     user: null
   };
 
-  if (req.cookies.userId && users[req.cookies.userId]) {
-    templateVars.user = users[req.cookies.userId];
+  if (req.session.userId && users[req.session.userId]) {
+    templateVars.user = users[req.session.userId];
   }
 
   res.render('urls_show', templateVars);
@@ -143,8 +143,8 @@ app.get('/register', (req, res) => {
     user: null
   }
   
-  if (req.cookies.userId && users[req.cookies.userId]) {
-    templateVars.user = users[req.cookies.userId];
+  if (req.session.userId && users[req.session.userId]) {
+    templateVars.user = users[req.session.userId];
   }
 
   res.render('urls_register', templateVars)
@@ -171,7 +171,7 @@ app.get('/logout', (req, res) => {
 
 //Add new URL to DB
 app.post('/urls', (req, res) => {
-  const userId = req.cookies.userId
+  const userId = req.session.userId
   const longURL = req.body.newLongURL;
   const shortURL = generateRandomString();
 
@@ -187,7 +187,7 @@ app.post('/urls', (req, res) => {
 app.post('/urls/:shortURL', (req, res) => {
   const changedURL = req.body.changedURL;
   const shortURL = req.params.shortURL;
-  const user = req.cookies.userId;
+  const user = req.session.userId;
 
   if (urlDatabase[shortURL].userId === user) {
     urlDatabase[shortURL] = changedURL;
@@ -199,7 +199,7 @@ app.post('/urls/:shortURL', (req, res) => {
 //Delete button for each entry
 app.post('/urls/:shortURL/delete', (req, res) => {
   const url = req.params.shortURL
-  const user = req.cookies.userId
+  const user = req.session.userId
 
   if (urlDatabase[url].userId === user) {
     delete urlDatabase[url];
@@ -210,32 +210,28 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 //Login to website
 app.post('/login', (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  const userId = checkEmail(email);
-  const currentUser = users[userId];
+  const { email, password } = req.body;
+  let accId = getIdByEmail(email);
+  const currentUser = users[accId];
 
-  if (!email || !password) {
-    res.status(400).json({message: 'Bad Request no email or password provided'});
-  };
-  
   if (currentUser.email === email) {
-    bcrypt.compareSync(password, currentUser.password, (err, isPasswordMatched) => {
-      if(isPasswordMatched) {
-        req.session.userId = //FILL IN THIS
-        res.redirect('/urls');
-      } else {
-        res.status(403).json({message: 'Incorrect password given'});
-      }
-    });
+    if (bcrypt.compareSync(password, currentUser.password)) {
+      req.session.userId = accId;
+      return res.redirect('/urls');
+    } else {
+      return res.status(403).json({message: "Incorrect password given"});
+    }
+  } else if (!email || !password) {
+    return res.status(400).json({message: "Bad Request: No email or password given"});
   } else {
-    res.status(403).json({message: 'Incorrect email'});
-  }
+    return res.status(403).json({message: "Incorrect email"});
+  };
+
 });
 
 //Logout of website
 app.post('/logout', (req, res) => {
-  res.clearCookie('userId')
+  req.session = null;
 
   res.redirect('/urls');
 });
@@ -251,7 +247,7 @@ app.post('/register', (req, res) => {
     return res.status(400).json({message: 'Bad Request: No email or password entered'});
   };
 
-  if(checkEmail(email) !== '') {
+  if(getIdByEmail(email) !== '') {
     return res.status(400).json({message: 'ERROR: Email already in use'});
   };
 
@@ -261,7 +257,7 @@ app.post('/register', (req, res) => {
     password: hashedPassword
   };
 
-  res.cookie('userId', randUserID);
+  req.session.userId = randUserID;
 
   res.redirect('/urls');
 })
