@@ -3,10 +3,11 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
-const { response } = require("express");
+const bcrypt = require('bcrypt');
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
 const generateRandomString = () => {
@@ -207,12 +208,13 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const accId = checkEmail(email)
 
   if (!email || !password) {
     res.status(400).json({message: 'Bad Request no email or password provided'});
   } else if (users[accId].email === email) {
-      if (users[accId].password === password) { //check if email and password match
+      if (users[accId].password === hashedPassword) { //check if email and password match
         res.cookie('userId', accId);
         res.redirect('/urls');
       } else {
@@ -234,6 +236,8 @@ app.post('/logout', (req, res) => {
 app.post('/register', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const randUserID = generateRandomString();
 
   if (!email || !password) {
     return res.status(400).json({message: 'Bad Request: No email or password entered'});
@@ -241,14 +245,13 @@ app.post('/register', (req, res) => {
 
   if(checkEmail(email) !== '') {
     return res.status(400).json({message: 'ERROR: Email already in use'});
-  }
+  };
 
-  const randUserID = generateRandomString();
   users[randUserID] = {
     id: randUserID,
     email,
-    password
-  }
+    password: hashedPassword
+  };
 
   res.cookie('userId', randUserID);
 
