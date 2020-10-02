@@ -9,7 +9,7 @@ const getIdByEmail = (email, db) => {
       return account;
     }
   }
-  return '';
+  return 'Not in DB';
 };
 
 const generateRandomString = () => {

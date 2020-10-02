@@ -23,7 +23,7 @@ describe('getIdByEmail', () => {
     assert.equal(user, expectedOutput);
   }),
 
-  it('should return an empty string when given an email not in the database', () => {
+  it("should return 'Not in DB' when given an email not in the database", () => {
     const user = getIdByEmail("not@inDatabase.com", testUsers);
     const expectedOutput = "";
 

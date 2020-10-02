@@ -51,19 +51,10 @@ const users = {
 
 app.get("/", (req, res) => {
   if (req.session.userId) {
-    return res.redirect('/urls');
+    return res.redirect('/urls'); //if logged in send to /urls
   } else {
-    return res.redirect('/login');
+    return res.redirect('/login'); //if not logged in send to /login
   }
-});
-
-//shows an object of all url key val pairs in the DB
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get('/hello', (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 //Shows index of urls in DB
@@ -76,7 +67,7 @@ app.get('/urls', (req, res) => {
   if (req.session.userId && users[req.session.userId]) {
     templateVars.user = users[req.session.userId];
   } else {
-    return res.render("urls_index", templateVars);
+    return res.render("urls_index", templateVars); //If logged out show no urls
   }
 
   templateVars.urls = urlsForUser(templateVars.user.id, urlDatabase);
@@ -99,14 +90,14 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new', templateVars);
 });
 
-//Create page w info about a single url
+//Create page with info about a single url
 app.get('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
 
   if (shortURL in urlDatabase) {
     const templateVars = {
       shortURL,
-      longURL: urlDatabase[req.params.shortURL].longURL,
+      longURL: urlDatabase[shortURL].longURL,
       user: null
     };
 
@@ -114,14 +105,12 @@ app.get('/urls/:shortURL', (req, res) => {
       templateVars.user = users[req.session.userId];
     }
 
-    for (let page in urlDatabase) {
-      if (urlDatabase[page].userId === templateVars.user.id && page === shortURL) {
-        return res.render('urls_show', templateVars);
-      } else if (urlDatabase[page].userId !== templateVars.user.id && page === shortURL) {
-        console.log(urlDatabase[page].userId, 'n', urlDatabase, shortURL)
-        return res.status(401).json({message: "Access Deined: Sorry but this page is owned by another user"});
-      }
+    if (urlDatabase[shortURL].userId === templateVars.user.id) {
+      return res.render('urls_show', templateVars);
+    } else {
+      return res.status(401).json({message: "Access Deined: Sorry but this page is owned by another user"});
     }
+
   } else {
     return res.status(404).json({message: "ERROR 404: Short URL NOT found in Database"});
   }
@@ -191,7 +180,7 @@ app.post('/urls/:shortURL', (req, res) => {
     urlDatabase[shortURL] = {
       longURL: changedURL,
       userId: user
-    }
+    };
   }
 
   res.redirect(`/urls/${shortURL}`);
@@ -212,10 +201,10 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 //Login to website
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  let accId = getIdByEmail(email, urlDatabase);
+  let accId = getIdByEmail(email, users);
   const currentUser = users[accId];
 
-  if (currentUser !== undefined) {
+  if (currentUser) {
     if (currentUser.email === email) {
       if (bcrypt.compareSync(password, currentUser.password)) {
         req.session.userId = accId;
@@ -229,7 +218,7 @@ app.post('/login', (req, res) => {
       return res.status(403).json({message: "Incorrect email"});
     }
   } else {
-    return res.status(404).json({message: "ERROR: User not found in Database"});
+    return res.status(404).json({message: "ERROR: Missing Inputs"});
   }
 });
 
@@ -250,7 +239,7 @@ app.post('/register', (req, res) => {
     return res.status(400).json({message: 'Bad Request: No email or password entered'});
   }
 
-  if (getIdByEmail(email, users) !== '') {
+  if (getIdByEmail(email, users) !== 'Not in DB') {
     return res.status(400).json({message: 'ERROR: Email already in use'});
   }
 
