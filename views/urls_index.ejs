@@ -9,8 +9,8 @@
   <title>TinyApp</title>
 </head>
 <body>
+  <%-include('partials/_header') %>
   <main style="margin: 1em;">
-    <%-include('partials/_header') %>
     
     <% if(user) { %>
       <h3>My URLs</h3>
@@ -43,7 +43,12 @@
       </tbody>
     </table>
     <% } else { %>
-      <h3>Please Login To View URLS</h3>
+      <div style="color: crimson; font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; margin-left: 30em; margin-top: 10em;">
+        <h3>Please Login To View URLS!</h3>
+        <a href="/login">Login Here <- </a>
+        <br>
+        <a href="/register">Register Here <- </a>
+      </div>
     <% } %>
   </main>
   <!-- Bootstrap JS -->
