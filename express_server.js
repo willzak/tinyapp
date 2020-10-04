@@ -103,6 +103,8 @@ app.get('/urls/:shortURL', (req, res) => {
 
     if (req.session.userId && users[req.session.userId]) {
       templateVars.user = users[req.session.userId];
+    } else {
+      return res.redirect('/login');
     }
 
     if (urlDatabase[shortURL].userId === templateVars.user.id) {
