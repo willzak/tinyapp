@@ -206,21 +206,19 @@ app.post('/login', (req, res) => {
   let accId = getIdByEmail(email, users);
   const currentUser = users[accId];
 
-  if (currentUser) {
-    if (currentUser.email === email) {
-      if (bcrypt.compareSync(password, currentUser.password)) {
-        req.session.userId = accId;
-        return res.redirect('/urls');
-      } else {
-        return res.status(403).json({message: "Incorrect password given"});
-      }
-    } else if (!email || !password) {
-      return res.status(400).json({message: "Bad Request: No email or password given"});
+  if (currentUser && currentUser.email === email) {
+    if (bcrypt.compareSync(password, currentUser.password)) {
+      req.session.userId = accId;
+      return res.redirect('/urls');
     } else {
-      return res.status(403).json({message: "Incorrect email"});
+      return res.status(403).json({message: "Incorrect password given"});
     }
+
+  } else if (!email || !password) {
+    return res.status(400).json({message: "Bad Request: No email or password given"});
+    
   } else {
-    return res.status(404).json({message: "ERROR: Missing Inputs"});
+    return res.status(403).json({message: "Incorrect email"});
   }
 });
 
